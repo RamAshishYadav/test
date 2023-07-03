@@ -1,0 +1,24 @@
+Parameters:
+  EngineType:
+    Type: String
+    Default: sqlserver
+    AllowedValues:
+      - mysql
+      - oracle
+      - postgres
+      - mariadb
+      - sqlserver
+ 
+Resources: 
+  TargetEndpoint:
+    Type: AWS::DMS::Endpoint
+    Properties:
+      DatabaseName: Migration-Ram
+      EndpointIdentifier: target-end-ram-mumbai
+      EndpointType: target
+      EngineName: !Ref EngineType
+      Username: sa
+      Password: 2000@Ashish
+      Port: 1433
+      ServerName: ec2-3-111-246-99.ap-south-1.compute.amazonaws.com
+      

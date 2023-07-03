@@ -1,0 +1,38 @@
+Parameters:
+
+# To create the drop down list of instance Type
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.nano
+      - t3.small
+
+# Pre-Existing VPCs in Particular region and account(AWS Specific Parameter)
+  MyVpc:
+    Type: AWS::EC2::VPC::Id
+
+#Pre-Existing Subnets in Particular region and account(AWS Specific Parameter) 
+  MySubnet:
+    Type: AWS::EC2::Subnet::Id
+
+#Pre-existing Keypairs in particular region and account(AWS Specific Parameter)
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+
+#Latest AMIs for particular region
+  MyImageIds:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2
+
+
+#Creation of EC2 instance with specified parameter
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref MyImageIds
+      KeyName: !Ref KeyPairName
+      SubnetId: !Ref MySubnet

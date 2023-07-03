@@ -1,0 +1,12 @@
+Parameters:
+  MyS3Bucket:
+    Type: String
+
+Resources:
+  Demobucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref MyS3Bucket
+      AccessControl: PublicRead
+    DeletionPolicy: Retain
+    

@@ -1,0 +1,12 @@
+---
+Resources:
+  MyLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: "my-lambda-function"
+      Code:
+        S3Bucket: "vamsi-corestack"
+        S3Key: "node-hello-master.zip"
+      Handler: "index.handler"
+      Runtime: "nodejs18.x"
+      Role: "arn:aws:iam::711391695265:role/AWS-lambda-exec-vamsi"

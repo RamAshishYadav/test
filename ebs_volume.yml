@@ -1,0 +1,17 @@
+Resources:
+  MyEbsVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      VolumeType: io1
+      Size: 60
+      Iops: 3000
+      AvailabilityZone: ap-south-1a
+
+  MyEbsVolumeAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      VolumeId: !Ref MyEbsVolume
+      InstanceId: !ImportValue xyz
+      Device: /dev/sdh
+
+

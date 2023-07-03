@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creation of On-demand resources with the ASG and target Tracking Policy.
+
+Parameters:
+  AmiId:
+    Type: String
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: At least two public subnets in different Availability Zones in the selected VPC.
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: A VPC that allows the load balancer access to the Internet.
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: A security group in the selected VPC that allows HTTP access on the inbound port.
+
+  CPUPolicyTargetValue:
+    Type: String
+    Description: The target utilization for the CPU metric.
+
+  ALBRequestCountTargetValue:
+    Type: String
+    Description: The optimal average request count per instance during any one-minute interval.
+
+
+Resources:
+  myLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets: !Ref Subnets
+
+# Registration of target group as a listener in the Elastic Load Balancing.
+  myLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref myTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref myLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+# Targets where Loadbalancer will divert the network traffic to be Processed.
+  myTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: myTargetGroup
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VPC
+
+  myLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData:
+        ImageId: !Ref AmiId
+        InstanceType: t3.micro
+        SecurityGroupIds: 
+          - !Ref InstanceSecurityGroup
+        Monitoring: 
+          Enabled: true
+
+# Creation of Auto Scaling Groups through the LaunchTemplate.
+  myASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref myLaunchTemplate
+        Version: !GetAtt myLaunchTemplate.LatestVersionNumber
+      MaxSize: '2'
+      MinSize: '1'
+      DefaultInstanceWarmup: 30
+      VPCZoneIdentifier: !Ref Subnets
+      TargetGroupARNs:
+        - !Ref myTargetGroup
+
+# Policy for metrics CPU utilisations
+  myCPUPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref myASG
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref CPUPolicyTargetValue
+
+# Policy for tracking the number of the request on the application load balancer.
+  myALBRequestCountPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    DependsOn: myLoadBalancerListener
+    Properties:
+      AutoScalingGroupName: !Ref myASG
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ALBRequestCountPerTarget
+          ResourceLabel: !Join 
+            - '/' 
+            - - !GetAtt myLoadBalancer.LoadBalancerFullName
+              - !GetAtt myTargetGroup.TargetGroupFullName
+        TargetValue: !Ref ALBRequestCountTargetValue

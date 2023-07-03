@@ -1,0 +1,29 @@
+
+
+Parameters:
+  MyVPC:
+    Type: AWS::EC2::VPC::Id
+
+  MySubnet:
+    Type: AWS::EC2::Subnet::Id
+   # VpcId: !Ref MyVPC
+    
+  EbsVolume:
+    Type: AWS::EC2::Volume::Id
+
+  InstanceType:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: MyParameter
+
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref ImageId
+      SubnetId: !Ref MySubnet
+      BlockDeviceMappings: !Ref EbsVolume

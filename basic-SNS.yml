@@ -1,0 +1,13 @@
+Description: Creation Of SNS Topic along with Subscription.
+Resources:
+  MySNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: Demo-topic-ram
+  
+  MySubsciption:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: sashish0377@gmail.com
+      Protocol: email
+      TopicArn: !Ref MySNSTopic

@@ -1,0 +1,95 @@
+#EC2 instance Creation with all Required parameters
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-07d3a50bd29811cd1
+      InstanceType: t2.micro
+      SubnetId: !Ref MySubnet
+      SecurityGroupIds: 
+        - !GetAtt "SShSecurityGroup.GroupId"
+
+  #SecurityGroups creation
+  SShSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "for SSh into EC2 instance"
+      VpcId: !Ref MyVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+       
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 10.0.0.0/24
+
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+ 
+ #Creation of VPCs for particular instance 
+  MyVpc:
+   Type: AWS::EC2::VPC
+   Properties:
+     CidrBlock: 10.0.0.0/24
+  
+  #Subnet creation for EC2 instance
+  MySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.1/26
+      VpcId: !Ref MyVpc
+      AvailabilityZone: ap-south-1a
+  
+  #InternetGateway for VPCs
+  InternetGateWay:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: MyVpc
+
+#Attachment of internetGateway to VPC
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVpc
+      InternetGatewayId: !Ref InternetGateWay
+
+# Creation of Elastic IP Address   
+  MyEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: MyVpc
+      InstanceId: !Ref MyInstance
+
+  #Association of Elastic IP Address 
+  EIPAttachment:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref MyInstance
+      AllocationId: !GetAtt MyEIP.AllocationId
+  # Creation of EBS Volume
+  MyEbsVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      VolumeType: io1
+      Size: 500
+      Iops: 3000
+      AvailabilityZone: !GetAtt MyInstance.AvailabilityZone
+
+  #Attachment of EBS Volume to particular Inatance
+  MyEbsVolumeAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      VolumeId: !Ref MyEbsVolume
+      InstanceId: !Ref MyInstance
+      Device: /dev/sdh
+
+
+
+      
+      
+

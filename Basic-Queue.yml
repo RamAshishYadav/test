@@ -1,0 +1,13 @@
+Description: this templates creates the Standard SQS Queue with properties mentioned below.
+Parameters:
+  Queuename:
+    Type: String
+Resources:
+  MyQueque:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref Queuename
+      MaximumMessageSize: 2048
+      MessageRetentionPeriod: 90
+      VisibilityTimeout: 5
+      DelaySeconds: 1

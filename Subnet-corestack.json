@@ -1,0 +1,34 @@
+
+Description: AWS CloudFormation Template to create Subnet.
+Parameters:
+    SubnetName:
+        Description: Name of the Subnet to be created
+        Type: String
+    VPCName:
+        Description: Name of the VPC to use for this Subnet
+        Type: AWS::EC2::VPC::Id
+        
+    CidrBlock:
+        Description: 'CIDR range for the VPC being created. Range of IPv4 addresses for the VPC in the form of a Classless Inter-Domain Routing (CIDR) block; for example, 10.0.0.0/16.'
+        Default: 10.0.0.0/16
+        MinLength: '9'
+        MaxLength: '18'
+        Type: String
+Resources:
+    CreateSubnet:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId:
+                Ref: VPCName
+            CidrBlock:
+                Ref: CidrBlock
+            Tags:
+                - 
+                    Key: Name
+                    Value:
+                        Ref: SubnetName
+Outputs:
+    SubnetId:
+        Description: The SubnetId
+        Value:
+            Ref: CreateSubnet

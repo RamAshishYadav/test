@@ -1,0 +1,68 @@
+Parameters:
+  InstanceType:
+    Description: webserver for EC2 instance
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+       - t2.small
+       - m1.small
+       - t2.nano
+       - t2.micro
+
+  EnvironmentType:
+    Description: environment for dev and pro
+    Type: String
+    Default: Dev
+    AllowedValues:
+      - prod 
+      - Dev
+      - Test 
+
+  VPC:
+    Description: Select your VPC
+    Type: String
+    Default: default
+    AllowedValues:
+      - default
+      - prod
+      - test
+Mappings:
+  AWSRegionMap2AMI:
+    ap-south-1:
+      prod: ami-07d3a50bd29811cd1
+      Dev: ami-06fc49795bc410a0c
+      Test: ami-02eb7a4783e7e9317
+      
+    ap-southeast-1:
+      prod: ami-04ddf30efb5385f93
+      Dev: ami-063e1495af50e6fd5
+      Test: ami-0a72af05d27b49ccb
+
+
+    ap-southeast-2:
+      prod: ami-0d9f286195031c3d9
+      Dev: ami-0da54bf2af20a74b7
+      Test: ami-05f998315cca9bfe3
+      
+  VPCmappings:
+    ap-south-1:
+      default: vpc-04ad5d585bb50e19e
+      prod: vpc-0fb8356b9393114de
+      test: vpc-06e71392233d940bd
+
+    ap-southeast-1:
+      default: vpc-0c4cde92b11e7ce8e
+    
+    ap-southeast-2:
+      default: vpc-07c53f4dddb08b4ef
+                 
+Resources:
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !FindInMap [AWSRegionMap2AMI, !Ref AWS::Region, !Ref VPC]
+  
+    
+      
+                 

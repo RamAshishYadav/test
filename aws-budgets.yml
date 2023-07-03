@@ -1,0 +1,45 @@
+---
+Description: This Templates creates the budgets for three regions and Notification with Email services.
+Parameters:
+  MyBudgets:
+    Type: Number
+    ConstraintDescription: Number Greater than 0 is accepted
+
+  PutThreshold:
+    Type: Number
+    MinValue: 0
+    MaxValue: 100
+    ContraintDescription: Number given should be in the range of 0-100
+
+# This section creates the budget limit on monthly basis in Particular period of time in different AWS regions.
+Resources:
+  BudgetExample:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetLimit:
+          Amount: 100
+          Unit: USD
+        TimeUnit: MONTHLY
+        TimePeriod:
+          Start: 1225864800
+          End: 1926864800
+        BudgetType: COST
+        CostFilters:
+          AZ:
+            - us-east-1
+            - ap-south-1
+            - us-east-2
+
+    ## Notifications will be sent on Email mentione below.
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: !Ref PutThreshold
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: sashish0377@gmail.com
+            - SubscriptionType: EMAIL
+              Address: ray806106@gmail.com
+

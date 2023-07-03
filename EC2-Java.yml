@@ -1,0 +1,229 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CLaaS - AWS CloudFormation Template to launch an instance then install
+  java,shellinabox,odl and mininet in the newly launched instance and execute the
+  python script which is given in the userdata and to associate an elastic ip to the
+  newly launched instance.
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    
+  SecurityGroup:
+    Description: The security group to add the EC2 instance to
+    Type: AWS::EC2::SecurityGroup::GroupName
+  
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t2.micro
+      - t3.small
+      - t2.nano
+      - t2.small
+
+  Username:
+    Description: Username to be created in the EC2 instance
+    Type: String
+    Default: claas_user
+
+  Password:
+    Description: Password of the user to access shell in a box
+    Type: String
+    Default: claas_pass
+Resources:
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init: {}
+    Properties:
+      InstanceType: !Ref InstanceType
+      SecurityGroups: 
+        - !Ref SecurityGroup
+      KeyName: !Ref KeyName
+      ImageId: ami-0b08bfc6ff7069aff
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Join:
+          - "-"
+          - - Ref: Username
+            - ODL
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash\n"
+            - 'echo "user_data started"
+
+              '
+            - 'cd /usr/bin
+
+              '
+            - 'apt-get update; apt-get install -y python-setuptools;
+
+              '
+            - 'export PATH="$PATH:/usr/local/bin/python"
+            
+              '
+            - 'apt-get -y install python-argparse cloud-init python-psutil python-pip
+              python-dev
+
+              '
+            - 'pip install boto==2.5.2 heat-cfntools
+
+              '
+            - 'cfn-create-aws-symlinks -s /usr/local/bin/
+
+              '
+            - "/opt/aws/bin/cfn-init -s "
+            - Ref: AWS::StackId
+            - " -r Ec2Instance "
+            - "    --region "
+            - Ref: AWS::Region
+            - 'echo "cfn-init completed"
+
+              '
+            - 'cd /home/ubuntu
+
+              '
+            - 'apt-get update
+
+              '
+            - 'apt-get -y install aptitude
+
+              '
+            - 'apt-get -y install shellinabox
+
+              '
+            - 'add-apt-repository ppa:openjdk-r/ppa
+
+              '
+            - 'apt-get -y update
+
+              '
+            - 'apt-get -y install openjdk-8-jdk
+
+              '
+            - 'export "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> /etc/environment
+
+              '
+            - 'source /etc/environment
+
+              '
+            - 'mkdir odl
+
+              '
+            - 'chmod -R 755 odl
+
+              '
+            - 'wget https://odl-lab.s3.amazonaws.com/CloudenablersODLLAB-6c2e5ea0-7661-4ecf-939e-f81c9e3e3dbe-1.7.1-ODL_5.1.0.1.tar.gz
+
+              '
+            - 'tar -xvzf CloudenablersODLLAB-6c2e5ea0-7661-4ecf-939e-f81c9e3e3dbe-1.7.1-ODL_5.1.0.1.tar.gz
+              -C odl
+
+              '
+            - 'cd /home/ubuntu/odl
+
+              '
+            - 'chmod -R 755 bin
+
+              '
+            - 'sed -i ''$ish /home/ubuntu/odl/bin/start'' /etc/rc.local
+
+              '
+            - 'cd /home/ubuntu
+
+              '
+            - 'apt-get -y install mininet
+
+              '
+            - 'cd /home/ubuntu
+
+              '
+            - 'wget https://odl-lab.s3.amazonaws.com/odlnew.py
+
+              '
+            - 'chmod 755 /home/ubuntu/odlnew.py
+
+              '
+            - 'screen -d -m -S odl bash -c ''python /home/ubuntu/odlnew.py''
+
+              '
+            - /opt/aws/bin/cfn-signal -e 0 -r "Script executed successfully" '
+            - Ref: WaitHandle
+            - "'\n"
+            - export username='
+            - Ref: Username
+            - "'\n"
+            - export password='
+            - Ref: Password
+            - "'\n"
+            - 'pass=$(perl -e ''print crypt($ARGV[0], ''password'')'' $password)
+
+              '
+            - 'useradd -m -p $pass $username
+
+              '
+            - 'echo "$username ALL=(ALL:ALL) ALL" >> /etc/sudoers
+
+              '
+            - 'echo "user_data finished"
+
+              '
+  WaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: Ec2Instance
+    Properties:
+      Count: '1'
+      Handle:
+        Ref: WaitHandle
+      Timeout: '900'
+  IPAddress:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId:
+        Ref: Ec2Instance
+Outputs:
+  InstanceID:
+    Description: InstanceID of the newly created EC2 instance
+    Value:
+      Ref: Ec2Instance
+  InstanceDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - Ec2Instance
+      - PublicDnsName
+  InstanceIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - Ec2Instance
+      - PublicIp
+  InstanceStackID:
+    Description: StackID
+    Value:
+      Ref: AWS::StackId
+  InstanceStackName:
+    Description: StackName
+    Value:
+      Ref: AWS::StackName
+  InstanceUsername:
+    Description: Username
+    Value:
+      Ref: Username
+  InstancePassword:
+    Description: Password
+    Value:
+      Ref: Password
+  WebConsoleUsername:
+    Description: Username
+    Value: admin
+  WebConsolePassword:
+    Description: Password
+    Value: admin

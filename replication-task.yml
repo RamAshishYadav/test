@@ -1,0 +1,20 @@
+Resources:
+  Migrationtask:
+    Type: AWS::DMS::ReplicationTask
+    Properties:
+      MigrationType: full-load
+      ReplicationInstanceArn: arn:aws:dms:ap-south-1:711391695265:rep:PA7MSCOUCZ5JNRCACK4B3E2ISTMSNL5U3RICMPI
+      ReplicationTaskIdentifier: My-task-migration
+      SourceEndpointArn: arn:aws:dms:ap-south-1:711391695265:endpoint:QKC47KIOUW3AXXXJCXXPPDVAXX7NRMKAKX3MDHQ
+      TargetEndpointArn: arn:aws:dms:ap-south-1:711391695265:endpoint:FOC3QA4OHHYZBJAPVSJSRYJQBQIQDNXDXCIBJBI
+      TableMappings: |
+        rules:
+        - rule-type: selection
+          rule-id: '3'
+          rule-name: '3'
+          object-locator:
+          schema-name: "%"
+          table-name: "%"
+          table-type: all
+          rule-action: include
+ 

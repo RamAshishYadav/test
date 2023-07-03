@@ -1,0 +1,43 @@
+Description: This templates creates the RDS database instance with mysql Engine and backups and backups windows. 
+Parameters:
+  AllocationofStorage:
+    Type: Number
+    ConstraintDescription: Number should be whole number(GiB)
+
+# Creation of RDS DBInstance with MySql Engine and Backups.
+Resources:
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref AllocationofStorage
+      DBInstanceClass: db.t2.micro
+      Engine: mysql
+      DBName: mydatabase
+      MasterUsername: myuser
+      MasterUserPassword: mypassword
+      MultiAZ: false
+      BackupRetentionPeriod: 10
+      PreferredBackupWindow: 02:00-03:00
+      VPCSecurityGroups: !Ref DBSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      StorageType: gp2
+
+# creation of Security Groups for the VPC of DBInstance
+  DBSecurityGroup:
+    Type: AWS::RDS::DBSecurityGroup
+    Properties:
+      GroupDescription: Security group for my RDS instance
+      DBSecurityGroupIngress:
+        - EC2SecurityGroupId: sg-02c68a61306813535
+
+# Creation of same RDS into different Availability Zone 
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: mydbsubnetgroup
+      DBSubnetGroupDescription: Subnet group for my RDS instance
+      SubnetIds:
+        - subnet-0f4b96074d88fde3a
+        - subnet-05a042aa23e425428
+  
+      

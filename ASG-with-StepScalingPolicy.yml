@@ -1,0 +1,85 @@
+Description: 
+  This Templates Increase 
+  - capacity by 1 when the value of the metric is greater than or equal to 70 percent but less than 85 percent
+  - capacity by 2 when the value of the metric is greater than or equal to 85 percent but less than 95 percent
+  - capacity by 3 when the value of the metric is greater than or equal to 95 percent 
+Parameters:
+  LatestAmiId:
+    Description: Region specific image from the Parameter Store
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2
+
+  InstanceType:
+    Description: Amazon EC2 instance type for the instances
+    Type: String
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Default: t3.micro
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: A list of subnets for the Auto Scaling group which alreay exists in VPCs
+
+  MaximumInstance:
+    Description: Maximum number of instance that can be created 
+    Type: Number
+    MinValue: 0
+    MaxValue: 100
+    ConstraintDescription: must be an Integer
+
+  MinimumInstance:
+    Description: Minimum number of instance to be created
+    Type: Number
+    MinValue: 0
+    MaxValue: 5
+    ConstraintDescription: must be an Integer
+
+  DesiredCapacity:
+    Description: Required number of instance to be created
+    Type: Number
+    MinValue: 0
+    MaxValue: 100
+    ConstraintDescription: must be an Integer
+
+# This section creates the Auto Scaling group using the LaunchTemplate Configuration which will import the imageId and InstanceType from 
+#SSM Parameter.
+Resources:
+  myLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData:
+        ImageId: !Ref LatestAmiId
+        InstanceType: !Ref InstanceType
+  myASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref myLaunchTemplate
+        Version: !GetAtt myLaunchTemplate.LatestVersionNumber
+      MaxSize: !Ref MaximumInstance
+      MinSize: !Ref MinimumInstance 
+      DesiredCapacity: !Ref DesiredCapacity
+      VPCZoneIdentifier: !Ref Subnets
+
+  ## Step Scaling Policy to be attached with the Auto Scaling Groups
+  ASGScalingPolicyHigh: 
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties: 
+      AutoScalingGroupName: !Ref myASG
+      PolicyType: StepScaling
+      AdjustmentType: ChangeInCapacity
+      MetricAggregationType: Average
+      EstimatedInstanceWarmup: '60'
+      StepAdjustments: 
+        - MetricIntervalLowerBound: 0
+          MetricIntervalUpperBound: 15
+          ScalingAdjustment: 1
+        - MetricIntervalLowerBound: 15
+          MetricIntervalUpperBound: 25
+          ScalingAdjustment: 2
+        - MetricIntervalLowerBound: 25
+          ScalingAdjustment: 3
+      

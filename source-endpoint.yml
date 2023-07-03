@@ -1,0 +1,24 @@
+Parameters:
+  EngineType:
+    Type: String
+    Default: sqlserver
+    AllowedValues:
+      - mysql
+      - oracle
+      - postgres
+      - mariadb
+      - sqlserver
+ 
+Resources: 
+  SourceEndpoint:
+    Type: AWS::DMS::Endpoint
+    Properties:
+      DatabaseName: Source-DB
+      EndpointIdentifier: source-endpoint-ram-mumbai
+      EndpointType: target
+      EngineName: !Ref EngineType
+      Username: sa
+      Password: Ashish@12345
+      Port: 1433
+      ServerName: 104.211.246.152\Source-VM
+      
